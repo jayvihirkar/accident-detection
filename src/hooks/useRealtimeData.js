@@ -334,6 +334,15 @@ export function useRealtimeData() {
         }
       )
       .subscribe((status) => {
+        if (!isMounted) {
+          return;
+        }
+
+        if (status === 'SUBSCRIBED') {
+          setError(null);
+          return;
+        }
+
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setError(`Supabase realtime connection status: ${status}`);
         }
