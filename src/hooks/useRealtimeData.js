@@ -106,6 +106,23 @@ function normalizeEvent(row) {
   };
 }
 
+function rowToSensorSample(row) {
+  return {
+    label: new Date(Number(row.timestamp || 0) * 1000).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }),
+    timestamp: row.timestamp,
+    ax: Number(row.ax ?? 0),
+    ay: Number(row.ay ?? 0),
+    az: Number(row.az ?? 0),
+    gx: Number(row.gx ?? 0),
+    gy: Number(row.gy ?? 0),
+    gz: Number(row.gz ?? 0),
+  };
+}
+
 function normalizeEvents(rows) {
   if (!Array.isArray(rows)) {
     return [];
@@ -114,6 +131,18 @@ function normalizeEvents(rows) {
   return rows
     .map(normalizeEvent)
     .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
+}
+
+function normalizeHistorySamples(rows) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows
+    .slice()
+    .sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0))
+    .map(rowToSensorSample)
+    .slice(-20);
 }
 
 function jitter(value, spread) {
@@ -202,7 +231,6 @@ export function useRealtimeData() {
 
       if (nextLive) {
         setLive(nextLive);
-        appendSensorSample(setSensorSamples, nextLive);
       }
     }
 
@@ -225,10 +253,33 @@ export function useRealtimeData() {
       setEvents(normalizeEvents(data));
     }
 
+    async function loadSensorHistory() {
+      const { data, error: historyError } = await supabase
+        .from('telemetry_history')
+        .select('timestamp, ax, ay, az, gx, gy, gz')
+        .eq('device_id', defaultDeviceId)
+        .order('timestamp', { ascending: false })
+        .limit(20);
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (historyError) {
+        setError(historyError.message);
+        return;
+      }
+
+      const samples = normalizeHistorySamples(data);
+      if (samples.length > 0) {
+        setSensorSamples(samples);
+      }
+    }
+
     async function loadInitialData() {
       setLoading(true);
       setError(null);
-      await Promise.all([loadLive(), loadEvents()]);
+      await Promise.all([loadLive(), loadEvents(), loadSensorHistory()]);
 
       if (isMounted) {
         setLoading(false);
@@ -254,7 +305,6 @@ export function useRealtimeData() {
           }
 
           setLive(nextLive);
-          appendSensorSample(setSensorSamples, nextLive);
         }
       )
       .on(
@@ -267,6 +317,20 @@ export function useRealtimeData() {
         },
         () => {
           loadEvents();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'telemetry_history',
+          filter: `device_id=eq.${defaultDeviceId}`,
+        },
+        (payload) => {
+          setSensorSamples((currentSamples) =>
+            [...currentSamples, rowToSensorSample(payload.new)].slice(-20)
+          );
         }
       )
       .subscribe((status) => {

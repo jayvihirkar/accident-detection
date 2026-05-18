@@ -58,6 +58,30 @@ on conflict (device_id) do update set
   timestamp = excluded.timestamp,
   updated_at = now();
 
+insert into public.telemetry_history (
+  device_id,
+  status,
+  severity,
+  ax,
+  ay,
+  az,
+  gx,
+  gy,
+  gz,
+  lat,
+  lng,
+  speed,
+  satellites,
+  impact_magnitude,
+  timestamp
+)
+values
+  ('vehicle_001', 'SAFE', 'NONE', 0.28, 0.12, 9.78, 0.01, -0.02, 0.08, 18.459688, 73.884798, 22, 8, 1.02, 1770000000),
+  ('vehicle_001', 'SAFE', 'NONE', 0.34, 0.16, 9.82, 0.02, -0.01, 0.10, 18.459721, 73.884831, 28, 8, 1.05, 1770000002),
+  ('vehicle_001', 'SAFE', 'LOW', 0.42, -0.11, 18.10, 1.10, 0.20, 0.80, 18.459755, 73.884865, 26, 9, 1.86, 1770000004),
+  ('vehicle_001', 'SAFE', 'NONE', -0.72, 0.20, 10.18, 1.50, 0.30, 0.40, 18.459790, 73.884900, 18, 9, 1.29, 1770000006),
+  ('vehicle_001', 'CRASH', 'HIGH', 14.80, -2.10, 21.30, 3.20, 0.40, 1.80, 18.459824, 73.884934, 12, 9, 25.90, 1770000008);
+
 insert into public.accident_events (
   id,
   type,

@@ -101,9 +101,12 @@ This creates:
 
 - `devices`
 - `live_telemetry`
+- `telemetry_history`
 - `accident_events`
 
-It also enables Row Level Security with permissive prototype policies and adds `live_telemetry` and `accident_events` to the `supabase_realtime` publication.
+It also enables Row Level Security with permissive prototype policies and adds `live_telemetry`, `telemetry_history`, and `accident_events` to the `supabase_realtime` publication.
+
+If you already created the first version of the tables and only need history logging, run `supabase-add-telemetry-history.sql` in SQL Editor.
 
 ## Add Sample Data
 
@@ -127,7 +130,7 @@ firmware_version text
 
 ### `live_telemetry`
 
-One row per vehicle. The ESP32 updates this every 1-2 seconds.
+One row per vehicle. The ESP32 updates this every 1-2 seconds. This table is supposed to overwrite the same `device_id` row so the dashboard can quickly read the latest state.
 
 ```sql
 device_id text primary key
@@ -145,6 +148,30 @@ speed double precision
 satellites integer
 impact_magnitude double precision
 timestamp bigint
+```
+
+### `telemetry_history`
+
+One row per ESP32 upload. This is the table to use when you want a full log/history of normal readings.
+
+```sql
+id bigserial primary key
+device_id text
+status text
+severity text
+ax double precision
+ay double precision
+az double precision
+gx double precision
+gy double precision
+gz double precision
+lat double precision
+lng double precision
+speed double precision
+satellites integer
+impact_magnitude double precision
+timestamp bigint
+created_at timestamptz
 ```
 
 ### `accident_events`
@@ -176,9 +203,10 @@ storage text
 The hook at `src/hooks/useRealtimeData.js`:
 
 - Fetches the current row from `live_telemetry`
+- Fetches the latest chart readings from `telemetry_history`
 - Fetches `accident_events` sorted by `timestamp` descending
 - Subscribes to Supabase Realtime `postgres_changes`
-- Updates the chart sample buffer with the last 20 live readings
+- Updates the chart sample buffer with the last 20 logged readings
 - Falls back to mock data if `.env` is missing
 
 The Supabase client lives in `src/supabase.js`.
@@ -228,7 +256,8 @@ An Arduino sketch is included at `esp32/blackbox_supabase.ino`. It keeps the exi
 Recommended behavior:
 
 - Upsert `devices` on boot.
-- Upsert `live_telemetry` every 1-2 seconds.
+- Upsert `live_telemetry` every 1-2 seconds for latest state.
+- Insert into `telemetry_history` every 1-2 seconds for full logging.
 - Insert into `accident_events` when a crash is detected.
 - Retry when Wi-Fi or upload fails.
 - Store the same payload on MicroSD when cloud upload fails.
@@ -253,6 +282,12 @@ Live telemetry upsert target:
 
 ```text
 POST /rest/v1/live_telemetry?on_conflict=device_id
+```
+
+Telemetry history insert target:
+
+```text
+POST /rest/v1/telemetry_history
 ```
 
 Crash event insert target:
@@ -297,5 +332,5 @@ VITE_DEVICE_ID
 - `supabase-seed.sql` executed
 - Realtime enabled for `live_telemetry` and `accident_events`
 - React reads live telemetry
-- ESP32 can upsert live telemetry
+- ESP32 can upsert live telemetry and insert telemetry history
 - Crash events are inserted into `accident_events`

@@ -27,7 +27,8 @@ const char* DEVICE_ID = "vehicle_001";
 The sketch writes:
 
 - `devices` on boot
-- `live_telemetry` every 2 seconds
+- `live_telemetry` every 2 seconds for the latest vehicle state
+- `telemetry_history` every 2 seconds for a complete reading log
 - `accident_events` when a crash is detected
 
 For production firmware, replace `client.setInsecure()` with Supabase TLS root certificate validation, and do not ship broad write permissions if the device will be public.

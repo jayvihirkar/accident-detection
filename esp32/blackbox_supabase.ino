@@ -11,8 +11,8 @@ const char* WIFI_SSID = "YOUR_WIFI_NAME";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // Example: https://rqxxxxxxxxxxxxxxxxxx.supabase.co
-const char* SUPABASE_URL = "https://rqxnweglbnbzgoqvipda.supabase.co";
-const char* SUPABASE_KEY = "sb_publishable_ZT_XnUyc5r4UOcYKWEHtCQ__BZiwQU8";
+const char* SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co";
+const char* SUPABASE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY";
 const char* DEVICE_ID = "vehicle_001";
 
 const unsigned long LIVE_UPLOAD_INTERVAL_MS = 2000;
@@ -454,14 +454,21 @@ void registerDevice() {
 void uploadLiveTelemetry() {
   String payload = telemetryJson();
 
-  bool ok = sendSupabaseRequest(
+  bool liveOk = sendSupabaseRequest(
     "POST",
     restUrl("live_telemetry?on_conflict=device_id"),
     payload,
     "resolution=merge-duplicates,return=minimal"
   );
 
-  if (!ok) {
+  bool historyOk = sendSupabaseRequest(
+    "POST",
+    restUrl("telemetry_history"),
+    payload,
+    "return=minimal"
+  );
+
+  if (!liveOk || !historyOk) {
     Serial.println("Live telemetry cloud upload failed. Store this payload on SD card if available.");
   }
 }
