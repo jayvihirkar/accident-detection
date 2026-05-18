@@ -35,6 +35,9 @@ src/
 .env.example
 supabase-schema.sql
 supabase-seed.sql
+esp32/
+  blackbox_supabase.ino
+  README.md
 ```
 
 ## Local Setup
@@ -66,7 +69,7 @@ npm run build
 2. Go to **Project Settings > API**.
 3. Copy:
    - **Project URL**
-   - **anon public key**
+   - **publishable key**
 4. Create a `.env` file in the project root:
 
 ```bash
@@ -77,7 +80,7 @@ copy .env.example .env
 
 ```text
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 VITE_DEVICE_ID=vehicle_001
 ```
 
@@ -180,6 +183,8 @@ The Supabase client lives in `src/supabase.js`.
 
 The ESP32 should write through Supabase REST endpoints or a small secure API layer.
 
+An Arduino sketch is included at `esp32/blackbox_supabase.ino`. It keeps the existing GPS + MPU6050 logic, registers the device, upserts `live_telemetry`, and inserts `accident_events` when a crash is detected.
+
 Recommended behavior:
 
 - Upsert `devices` on boot.
@@ -198,8 +203,8 @@ https://YOUR_PROJECT_REF.supabase.co/rest/v1/
 Required headers for prototype REST writes:
 
 ```text
-apikey: YOUR_SUPABASE_ANON_KEY
-Authorization: Bearer YOUR_SUPABASE_ANON_KEY
+apikey: YOUR_SUPABASE_PUBLISHABLE_KEY
+Authorization: Bearer YOUR_SUPABASE_PUBLISHABLE_KEY
 Content-Type: application/json
 Prefer: resolution=merge-duplicates,return=minimal
 ```
@@ -240,7 +245,7 @@ Deploy the generated `dist/` folder and configure these environment variables on
 
 ```text
 VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
+VITE_SUPABASE_PUBLISHABLE_KEY
 VITE_DEVICE_ID
 ```
 
