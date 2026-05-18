@@ -387,10 +387,27 @@ String telemetryJson() {
 }
 
 String crashEventJson() {
-  String json = telemetryJson();
-  json.remove(json.length() - 1);
-  json += ",\"id\":\"event_" + String(currentTimestamp()) + "\",";
+  bool hasLocation = gps.location.isValid();
+  bool hasSpeed = gps.speed.isValid();
+  unsigned long timestamp = currentTimestamp();
+
+  String json = "{";
+  json += "\"id\":\"event_" + String(timestamp) + "\",";
   json += "\"type\":\"CRASH\",";
+  json += "\"severity\":\"" + severityFromImpact() + "\",";
+  json += "\"ax\":" + String(ax_g, 4) + ",";
+  json += "\"ay\":" + String(ay_g, 4) + ",";
+  json += "\"az\":" + String(az_g, 4) + ",";
+  json += "\"gx\":" + String(gx_dps, 4) + ",";
+  json += "\"gy\":" + String(gy_dps, 4) + ",";
+  json += "\"gz\":" + String(gz_dps, 4) + ",";
+  json += "\"impact_magnitude\":" + String(totalAcceleration, 4) + ",";
+  json += "\"lat\":" + gpsNumberOrNull(gps.location.lat(), hasLocation, 6) + ",";
+  json += "\"lng\":" + gpsNumberOrNull(gps.location.lng(), hasLocation, 6) + ",";
+  json += "\"speed\":" + String(hasSpeed ? gps.speed.kmph() : 0.0, 2) + ",";
+  json += "\"satellites\":" + String(gps.satellites.isValid() ? gps.satellites.value() : 0) + ",";
+  json += "\"timestamp\":" + String(timestamp) + ",";
+  json += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
   json += "\"storage\":\"cloud\"";
   json += "}";
   return json;

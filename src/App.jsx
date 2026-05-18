@@ -11,7 +11,7 @@ import { demoDatasets } from './utils/demoDataset';
 
 function App() {
   const { live, events, sensorSamples, loading, error, usingMockData } = useRealtimeData();
-  const [selectedDemoId, setSelectedDemoId] = useState(demoDatasets[0]?.id || null);
+  const [selectedDemoId, setSelectedDemoId] = useState(null);
 
   const selectedDemo = useMemo(
     () => demoDatasets.find((dataset) => dataset.id === selectedDemoId) || null,
