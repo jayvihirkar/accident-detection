@@ -6,6 +6,7 @@ A React 19 + Vite dashboard for an ESP32 Smart Vehicle Blackbox and Accident Det
 
 - Supabase client setup with `.env` values
 - Realtime subscriptions for live vehicle telemetry and accident events
+- Built-in five-record demo dataset for classroom presentation
 - Mock telemetry fallback until Supabase is configured
 - SAFE and CRASH status styling
 - Rolling 20-sample Chart.js line charts for acceleration and gyroscope data
@@ -178,6 +179,24 @@ The hook at `src/hooks/useRealtimeData.js`:
 - Falls back to mock data if `.env` is missing
 
 The Supabase client lives in `src/supabase.js`.
+
+## Classroom Demo Dataset
+
+The website includes five prepared demo readings centered around:
+
+```text
+18.45968802450589, 73.88479778632185
+```
+
+Use the **Demo Dataset** selector on the dashboard to switch between:
+
+- Normal drive
+- Road shock
+- Hard brake
+- Medium crash
+- Severe crash
+
+Selecting a demo record updates the status card, metrics, charts, map, and accident event panel. Click **Live Supabase feed** to return to realtime data from the ESP32.
 
 ## ESP32 Integration
 
