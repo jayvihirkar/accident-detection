@@ -39,6 +39,9 @@ supabase-seed.sql
 esp32/
   blackbox_supabase.ino
   README.md
+matlab/
+  blackbox_live_simulation.m
+  README.md
 ```
 
 ## Local Setup
@@ -197,6 +200,18 @@ Use the **Demo Dataset** selector on the dashboard to switch between:
 - Severe crash
 
 Selecting a demo record updates the status card, metrics, charts, map, and accident event panel. Click **Live Supabase feed** to return to realtime data from the ESP32.
+
+## MATLAB Live Simulation
+
+A MATLAB simulation is included at `matlab/blackbox_live_simulation.m`. It animates a vehicle route around the demo location and displays live-style GPS, acceleration, gyroscope, speed, impact magnitude, and crash status.
+
+Run it in MATLAB:
+
+```matlab
+blackbox_live_simulation
+```
+
+The simulation includes normal driving, hard braking, pothole/road shock, and crash sections so you can demonstrate the system safely without damaging a vehicle.
 
 ## ESP32 Integration
 
