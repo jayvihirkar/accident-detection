@@ -1,5 +1,7 @@
 # MATLAB Live Simulation
 
+## Option 1: Offline Simulation
+
 Run this file in MATLAB:
 
 ```matlab
@@ -30,4 +32,35 @@ The simulation includes:
 
 No Mapping Toolbox is required. The GPS view is a latitude/longitude plot so it should run on ordinary MATLAB installations.
 
-To connect real ESP32 serial data later, replace `generateDemoData(...)` with a loop that reads comma-separated values from `serialport`.
+## Option 2: Live Supabase Monitor
+
+This reads the actual `live_telemetry` row that the ESP32 uploads to Supabase.
+
+1. Copy the config template:
+
+```matlab
+copyfile("supabase_config_template.m", "supabase_config.m")
+```
+
+2. Open `supabase_config.m` and fill:
+
+```matlab
+config.url = "https://YOUR_PROJECT_REF.supabase.co";
+config.key = "YOUR_SUPABASE_PUBLISHABLE_KEY";
+config.deviceId = "vehicle_001";
+```
+
+3. Run:
+
+```matlab
+blackbox_supabase_live_monitor
+```
+
+The live monitor polls Supabase every 1.5 seconds and updates:
+
+- GPS track
+- Acceleration chart
+- Gyroscope chart
+- Speed, satellites, status, severity, and impact magnitude
+
+Keep `supabase_config.m` private. It is ignored by Git.

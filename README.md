@@ -213,6 +213,12 @@ blackbox_live_simulation
 
 The simulation includes normal driving, hard braking, pothole/road shock, and crash sections so you can demonstrate the system safely without damaging a vehicle.
 
+For real ESP32 values from Supabase, use `matlab/blackbox_supabase_live_monitor.m`. Copy `matlab/supabase_config_template.m` to `matlab/supabase_config.m`, fill your Supabase URL/key, then run:
+
+```matlab
+blackbox_supabase_live_monitor
+```
+
 ## ESP32 Integration
 
 The ESP32 should write through Supabase REST endpoints or a small secure API layer.
