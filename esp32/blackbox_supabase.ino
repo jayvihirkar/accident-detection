@@ -10,8 +10,8 @@
 const char* WIFI_SSID = "YOUR_WIFI_NAME";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-const char* SUPABASE_URL = "https://rqxnweglbnbzgoqvipda.supabase.co";
-const char* SUPABASE_KEY = "sb_publishable_ZT_XnUyc5r4UOcYKWEHtCQ__BZiwQU8";
+const char* SUPABASE_URL = "https://a.supabase.co";
+const char* SUPABASE_KEY = "key";
 const char* DEVICE_ID = "vehicle_001";
 
 const unsigned long LIVE_UPLOAD_INTERVAL_MS = 2000;
