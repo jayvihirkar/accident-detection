@@ -11,9 +11,8 @@ export default function DemoDatasetSelector({
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-950">Demo Dataset</h2>
           <p className="text-sm text-slate-500">
-            Select one of the last five prepared readings for the classroom demonstration.
+            Select one of the five prepared readings.
           </p>
         </div>
         <button

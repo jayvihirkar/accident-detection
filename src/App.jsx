@@ -45,13 +45,13 @@ function App() {
 
         {error ? (
           <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
-            Supabase error: {error}
+            Database error: {error}
           </div>
         ) : null}
 
         {usingMockData ? (
           <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-800 shadow-sm">
-            Supabase is not configured. Rendering live mock telemetry until environment values are added.
+            Database is not configured. Rendering live mock telemetry until environment values are added.
           </div>
         ) : null}
 
@@ -66,8 +66,7 @@ function App() {
 
           {selectedDemo ? (
             <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm font-medium text-sky-800 shadow-sm">
-              Showing prepared demo data: {selectedDemo.title}. Use "Live Supabase feed" to return to
-              realtime ESP32 data.
+            Use "Live feed" to display realtime data.
             </div>
           ) : null}
 

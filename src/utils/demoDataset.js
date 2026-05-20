@@ -37,14 +37,23 @@ function buildSamples(baseTimestamp, variant) {
     { ax: -0.32, ay: 0.06, az: 1.02, gx: 0.9, gy: 0.3, gz: 0.2 },
   ];
 
-  const crash = [
+  const crashMedium = [
     { ax: 0.06, ay: 0.03, az: 1.02, gx: 0.4, gy: 0.2, gz: 0.1 },
-    { ax: 0.35, ay: -0.2, az: 1.28, gx: 1.8, gy: 0.8, gz: 0.6 },
-    { ax: 2.7, ay: -1.15, az: 3.45, gx: 6.2, gy: 2.5, gz: 4.1 },
-    { ax: 1.18, ay: -0.58, az: 2.02, gx: 4.3, gy: 1.7, gz: 2.2 },
+    { ax: 0.28, ay: -0.16, az: 1.22, gx: 1.2, gy: 0.5, gz: 0.4 },
+    { ax: 1.55, ay: -0.72, az: 2.58, gx: 3.8, gy: 1.4, gz: 2.1 },
+    { ax: 0.84, ay: -0.36, az: 1.74, gx: 2.4, gy: 0.9, gz: 1.3 },
+    { ax: 0.18, ay: -0.08, az: 1.1, gx: 0.9, gy: 0.4, gz: 0.3 },
   ];
 
-  const lookup = { normal, pothole, hardBrake, crash };
+  const crashHigh = [
+    { ax: 0.08, ay: 0.04, az: 1.03, gx: 0.5, gy: 0.2, gz: 0.1 },
+    { ax: 0.62, ay: -0.34, az: 1.58, gx: 2.6, gy: 1.1, gz: 0.9 },
+    { ax: 3.7, ay: -1.78, az: 4.42, gx: 8.4, gy: 3.6, gz: 5.7 },
+    { ax: -1.9, ay: 1.22, az: 3.16, gx: -6.8, gy: -2.8, gz: -4.6 },
+    { ax: 1.24, ay: -0.88, az: 2.36, gx: 4.9, gy: 2.1, gz: 3.2 },
+  ];
+
+  const lookup = { normal, pothole, hardBrake, crashMedium, crashHigh };
   const pattern = lookup[variant] || normal;
 
   return Array.from({ length: 20 }, (_, index) => {
@@ -194,7 +203,7 @@ export const demoDatasets = [
     severity: 'MEDIUM',
     speed: 44,
     impactMagnitude: 2.58,
-    variant: 'crash',
+    variant: 'crashMedium',
     latOffset: 0.00026,
     lngOffset: 0.00019,
   }),
@@ -207,7 +216,7 @@ export const demoDatasets = [
     severity: 'HIGH',
     speed: 61,
     impactMagnitude: 4.42,
-    variant: 'crash',
+    variant: 'crashHigh',
     latOffset: -0.00023,
     lngOffset: -0.00017,
   }),
