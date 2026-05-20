@@ -17,10 +17,12 @@ const char* DEVICE_ID = "vehicle_001";
 
 const unsigned long LIVE_UPLOAD_INTERVAL_MS = 2000;
 const unsigned long CRASH_EVENT_COOLDOWN_MS = 10000;
+const unsigned long POTHOLE_EVENT_COOLDOWN_MS = 10000;
 const unsigned long CRASH_STATUS_HOLD_MS = 5000;
 
 unsigned long lastLiveUploadMs = 0;
 unsigned long lastCrashEventUploadMs = 0;
+unsigned long lastPotholeEventUploadMs = 0;
 unsigned long lastCrashDetectedMs = 0;
 float lastCrashImpactG = 0.0;
 
@@ -91,7 +93,9 @@ void loop() {
   printGPSData();
   printMPUData();
 
-  bool crashDetected = detectEvents();
+  bool crashDetected = false;
+  bool potholeDetected = false;
+  detectEvents(crashDetected, potholeDetected);
 
   if (WiFi.status() != WL_CONNECTED) {
     connectWiFi();
@@ -105,6 +109,11 @@ void loop() {
   if (crashDetected && millis() - lastCrashEventUploadMs >= CRASH_EVENT_COOLDOWN_MS) {
     uploadCrashEvent();
     lastCrashEventUploadMs = millis();
+  }
+
+  if (potholeDetected && millis() - lastPotholeEventUploadMs >= POTHOLE_EVENT_COOLDOWN_MS) {
+    uploadPotholeEvent();
+    lastPotholeEventUploadMs = millis();
   }
 
   Serial.println("============================\n");
@@ -259,10 +268,10 @@ void printMPUData() {
 }
 
 // ---------------- EVENT DETECTION ----------------
-bool detectEvents() {
+void detectEvents(bool& crashDetected, bool& potholeDetected) {
   Serial.println("\n===== EVENT STATUS =====");
 
-  bool crashDetected = totalAcceleration > crashThresholdG;
+  crashDetected = totalAcceleration > crashThresholdG;
 
   if (crashDetected) {
     lastCrashDetectedMs = millis();
@@ -279,7 +288,9 @@ bool detectEvents() {
     Serial.println("Crash: Normal");
   }
 
-  if (abs(az_g) > potholeThresholdG) {
+  potholeDetected = abs(az_g) > potholeThresholdG;
+
+  if (potholeDetected) {
     Serial.println("POTHOLE / ROAD SHOCK DETECTED");
 
     if (gps.location.isValid()) {
@@ -298,7 +309,6 @@ bool detectEvents() {
     Serial.println("Tilt: Normal");
   }
 
-  return crashDetected;
 }
 
 // ---------------- Supabase Helpers ----------------
@@ -413,6 +423,33 @@ String crashEventJson() {
   return json;
 }
 
+String potholeEventJson() {
+  bool hasLocation = gps.location.isValid();
+  bool hasSpeed = gps.speed.isValid();
+  unsigned long timestamp = currentTimestamp();
+
+  String json = "{";
+  json += "\"id\":\"pothole_" + String(timestamp) + "\",";
+  json += "\"type\":\"POTHOLE\",";
+  json += "\"severity\":\"LOW\",";
+  json += "\"ax\":" + String(ax_g, 4) + ",";
+  json += "\"ay\":" + String(ay_g, 4) + ",";
+  json += "\"az\":" + String(az_g, 4) + ",";
+  json += "\"gx\":" + String(gx_dps, 4) + ",";
+  json += "\"gy\":" + String(gy_dps, 4) + ",";
+  json += "\"gz\":" + String(gz_dps, 4) + ",";
+  json += "\"impact_magnitude\":" + String(totalAcceleration, 4) + ",";
+  json += "\"lat\":" + gpsNumberOrNull(gps.location.lat(), hasLocation, 6) + ",";
+  json += "\"lng\":" + gpsNumberOrNull(gps.location.lng(), hasLocation, 6) + ",";
+  json += "\"speed\":" + String(hasSpeed ? gps.speed.kmph() : 0.0, 2) + ",";
+  json += "\"satellites\":" + String(gps.satellites.isValid() ? gps.satellites.value() : 0) + ",";
+  json += "\"timestamp\":" + String(timestamp) + ",";
+  json += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
+  json += "\"storage\":\"cloud\"";
+  json += "}";
+  return json;
+}
+
 bool sendSupabaseRequest(const String& method, const String& url, const String& payload, const String& preferHeader) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Supabase upload skipped: Wi-Fi disconnected");
@@ -502,5 +539,20 @@ void uploadCrashEvent() {
 
   if (!ok) {
     Serial.println("Crash event cloud upload failed. Store this payload on SD card if available.");
+  }
+}
+
+void uploadPotholeEvent() {
+  String payload = potholeEventJson();
+
+  bool ok = sendSupabaseRequest(
+    "POST",
+    restUrl("pothole_events"),
+    payload,
+    "return=minimal"
+  );
+
+  if (!ok) {
+    Serial.println("Pothole event cloud upload failed. Store this payload on SD card if available.");
   }
 }

@@ -88,6 +88,32 @@ function eventFor(record) {
   };
 }
 
+function potholeFor(record) {
+  if (record.id !== 'demo-pothole') {
+    return null;
+  }
+
+  return {
+    id: `pothole_${record.live.timestamp}`,
+    type: 'POTHOLE',
+    severity: 'LOW',
+    ax: record.live.ax,
+    ay: record.live.ay,
+    az: record.live.az,
+    gx: record.live.gx,
+    gy: record.live.gy,
+    gz: record.live.gz,
+    impactMagnitude: record.live.impactMagnitude,
+    lat: record.live.lat,
+    lng: record.live.lng,
+    speed: record.live.speed,
+    satellites: record.live.satellites,
+    timestamp: record.live.timestamp,
+    deviceId: record.live.deviceId,
+    storage: 'cloud',
+  };
+}
+
 function makeRecord({ id, title, note, timestampOffset, status, severity, speed, impactMagnitude, variant, latOffset, lngOffset }) {
   const timestamp = BASE_TIMESTAMP - timestampOffset;
   const samples = buildSamples(timestamp, variant);
@@ -115,6 +141,7 @@ function makeRecord({ id, title, note, timestampOffset, status, severity, speed,
   return {
     ...record,
     event: eventFor(record),
+    pothole: potholeFor(record),
   };
 }
 

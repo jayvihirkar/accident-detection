@@ -68,8 +68,32 @@ create table if not exists public.accident_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.pothole_events (
+  id text primary key,
+  type text not null default 'POTHOLE',
+  severity text not null default 'LOW',
+  ax double precision not null default 0,
+  ay double precision not null default 0,
+  az double precision not null default 0,
+  gx double precision not null default 0,
+  gy double precision not null default 0,
+  gz double precision not null default 0,
+  impact_magnitude double precision not null default 0,
+  lat double precision,
+  lng double precision,
+  speed double precision not null default 0,
+  satellites integer not null default 0,
+  timestamp bigint not null,
+  device_id text not null references public.devices(id) on delete cascade,
+  storage text not null default 'cloud',
+  created_at timestamptz not null default now()
+);
+
 create index if not exists accident_events_device_timestamp_idx
   on public.accident_events (device_id, timestamp desc);
+
+create index if not exists pothole_events_device_timestamp_idx
+  on public.pothole_events (device_id, timestamp desc);
 
 create index if not exists telemetry_history_device_timestamp_idx
   on public.telemetry_history (device_id, timestamp desc);
@@ -78,6 +102,7 @@ alter table public.devices enable row level security;
 alter table public.live_telemetry enable row level security;
 alter table public.telemetry_history enable row level security;
 alter table public.accident_events enable row level security;
+alter table public.pothole_events enable row level security;
 
 drop policy if exists "Allow prototype reads on devices" on public.devices;
 drop policy if exists "Allow prototype writes on devices" on public.devices;
@@ -87,6 +112,8 @@ drop policy if exists "Allow prototype reads on telemetry history" on public.tel
 drop policy if exists "Allow prototype writes on telemetry history" on public.telemetry_history;
 drop policy if exists "Allow prototype reads on accident events" on public.accident_events;
 drop policy if exists "Allow prototype writes on accident events" on public.accident_events;
+drop policy if exists "Allow prototype reads on pothole events" on public.pothole_events;
+drop policy if exists "Allow prototype writes on pothole events" on public.pothole_events;
 
 create policy "Allow prototype reads on devices"
   on public.devices for select
@@ -124,6 +151,15 @@ create policy "Allow prototype writes on accident events"
   using (true)
   with check (true);
 
+create policy "Allow prototype reads on pothole events"
+  on public.pothole_events for select
+  using (true);
+
+create policy "Allow prototype writes on pothole events"
+  on public.pothole_events for all
+  using (true)
+  with check (true);
+
 do $$
 begin
   if not exists (
@@ -154,5 +190,15 @@ begin
       and tablename = 'accident_events'
   ) then
     alter publication supabase_realtime add table public.accident_events;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'pothole_events'
+  ) then
+    alter publication supabase_realtime add table public.pothole_events;
   end if;
 end $$;

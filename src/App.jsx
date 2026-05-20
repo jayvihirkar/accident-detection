@@ -10,7 +10,7 @@ import { useRealtimeData } from './hooks/useRealtimeData';
 import { demoDatasets } from './utils/demoDataset';
 
 function App() {
-  const { live, events, sensorSamples, loading, error, usingMockData } = useRealtimeData();
+  const { live, events, potholes, sensorSamples, loading, error, usingMockData } = useRealtimeData();
   const [selectedDemoId, setSelectedDemoId] = useState(null);
 
   const selectedDemo = useMemo(
@@ -20,6 +20,7 @@ function App() {
 
   const displayLive = selectedDemo?.live || live;
   const displayEvents = selectedDemo ? (selectedDemo.event ? [selectedDemo.event] : []) : events;
+  const displayPotholes = selectedDemo ? (selectedDemo.pothole ? [selectedDemo.pothole] : []) : potholes;
   const displaySamples = selectedDemo?.samples || sensorSamples;
   const isCrash = displayLive?.status === 'CRASH';
   const latestEvent = displayEvents[0];
@@ -92,7 +93,7 @@ function App() {
           <SensorCharts samples={displaySamples} />
 
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
-            <LocationMap live={displayLive} />
+            <LocationMap live={displayLive} potholes={displayPotholes} />
             <EventHistory events={displayEvents} />
           </section>
         </div>

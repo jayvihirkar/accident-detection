@@ -35,7 +35,12 @@ src/
   index.css
 .env.example
 supabase-schema.sql
+supabase-crash-sms-webhook.sql
 supabase-seed.sql
+supabase/
+  functions/
+    send-crash-sms/
+      index.ts
 esp32/
   blackbox_supabase.ino
   README.md
@@ -308,6 +313,60 @@ When `live_telemetry.status` changes to `CRASH`, the app can:
 
 Supabase itself does not replace Firebase Cloud Messaging directly. The usual Supabase path is Edge Functions plus a notification provider.
 
+### Twilio Crash SMS
+
+This repo includes a Supabase Edge Function at `supabase/functions/send-crash-sms/index.ts`.
+It sends an SMS when a new row is inserted into `accident_events`.
+
+The SMS includes:
+
+- Vehicle/device ID
+- Severity
+- Impact magnitude
+- Speed
+- Timestamp
+- Exact Google Maps link when GPS latitude and longitude are available
+
+This keeps Twilio credentials out of the React app and out of the ESP32 firmware.
+
+1. Install and log in to the Supabase CLI if needed.
+2. Set these Supabase Function secrets:
+
+```bash
+supabase secrets set TWILIO_ACCOUNT_SID=your_account_sid
+supabase secrets set TWILIO_AUTH_TOKEN=your_auth_token
+supabase secrets set TWILIO_FROM_NUMBER=+1234567890
+supabase secrets set ALERT_TO_NUMBERS=+919876543210
+supabase secrets set CRASH_SMS_WEBHOOK_SECRET=replace_with_a_long_random_secret
+```
+
+Use comma-separated recipients for multiple phones:
+
+```bash
+supabase secrets set ALERT_TO_NUMBERS=+919876543210,+919123456789
+```
+
+3. Deploy the function without JWT verification, because the database trigger uses a shared secret header instead:
+
+```bash
+supabase functions deploy send-crash-sms --no-verify-jwt
+```
+
+4. Open `supabase-crash-sms-webhook.sql`, replace:
+
+```text
+https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-crash-sms
+REPLACE_WITH_CRASH_SMS_WEBHOOK_SECRET
+```
+
+Use the same `CRASH_SMS_WEBHOOK_SECRET` value you set above.
+
+5. Run `supabase-crash-sms-webhook.sql` in the Supabase SQL Editor.
+
+After that, every successful `accident_events` insert from the ESP32 triggers an SMS.
+
+For Twilio trial accounts, the recipient phone number usually must be verified in Twilio first. Use E.164 phone format, for example `+91...` for India.
+
 ## Hosting
 
 Supabase does not host Vite frontends directly. Deploy the built app to Vercel, Netlify, GitHub Pages, Cloudflare Pages, or any static hosting provider:
@@ -330,6 +389,9 @@ VITE_DEVICE_ID
 - `.env` filled with project URL and anon key
 - `supabase-schema.sql` executed
 - `supabase-seed.sql` executed
+- Twilio secrets set in Supabase, if SMS alerts are needed
+- `send-crash-sms` Edge Function deployed, if SMS alerts are needed
+- `supabase-crash-sms-webhook.sql` executed, if SMS alerts are needed
 - Realtime enabled for `live_telemetry` and `accident_events`
 - React reads live telemetry
 - ESP32 can upsert live telemetry and insert telemetry history

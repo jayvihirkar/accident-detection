@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import L from 'leaflet';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -9,6 +9,13 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
+});
+
+const potholeIcon = L.divIcon({
+  className: 'pothole-map-pin',
+  html: '<span></span>',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 function MapUpdater({ position }) {
@@ -21,10 +28,21 @@ function MapUpdater({ position }) {
   return null;
 }
 
-export default function LocationMap({ live }) {
+function formatTime(timestamp) {
+  if (!timestamp) {
+    return 'Unknown time';
+  }
+
+  return new Date(Number(timestamp) * 1000).toLocaleString();
+}
+
+export default function LocationMap({ live, potholes = [] }) {
   const hasLocation = Number.isFinite(Number(live?.lat)) && Number.isFinite(Number(live?.lng));
   const position = hasLocation ? [Number(live.lat), Number(live.lng)] : [18.5204, 73.8567];
   const status = live?.status || 'UNKNOWN';
+  const mappedPotholes = potholes.filter(
+    (pothole) => Number.isFinite(Number(pothole.lat)) && Number.isFinite(Number(pothole.lng))
+  );
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -67,6 +85,25 @@ export default function LocationMap({ live }) {
               </Popup>
             </Marker>
           ) : null}
+          {mappedPotholes.map((pothole) => (
+            <Marker
+              icon={potholeIcon}
+              key={pothole.id || `${pothole.lat}-${pothole.lng}-${pothole.timestamp}`}
+              position={[Number(pothole.lat), Number(pothole.lng)]}
+            >
+              <Tooltip className="pothole-map-label" direction="top" offset={[0, -10]} permanent>
+                Pothole
+              </Tooltip>
+              <Popup>
+                <div className="space-y-1">
+                  <p className="font-semibold">Road Has Pothole</p>
+                  <p>Recorded: {formatTime(pothole.timestamp)}</p>
+                  <p>Shock: {pothole.impactMagnitude ?? 'Unavailable'} g</p>
+                  <p>Speed: {pothole.speed ?? 'Unavailable'} km/h</p>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
         </MapContainer>
       </div>
     </section>

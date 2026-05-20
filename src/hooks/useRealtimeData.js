@@ -60,6 +60,28 @@ const mockEvents = [
   },
 ];
 
+const mockPotholes = [
+  {
+    id: 'pothole1',
+    type: 'POTHOLE',
+    severity: 'LOW',
+    ax: 0.18,
+    ay: -0.09,
+    az: 1.92,
+    gx: 1.8,
+    gy: 0.6,
+    gz: 0.4,
+    impactMagnitude: 1.96,
+    lat: 18.5208,
+    lng: 73.8562,
+    speed: 28,
+    satellites: 8,
+    timestamp: Math.floor(Date.now() / 1000) - 1800,
+    deviceId: 'vehicle_001',
+    storage: 'cloud',
+  },
+];
+
 function normalizeLive(row) {
   if (!row) {
     return null;
@@ -106,6 +128,28 @@ function normalizeEvent(row) {
   };
 }
 
+function normalizePothole(row) {
+  return {
+    id: row.id,
+    type: row.type || 'POTHOLE',
+    severity: row.severity || 'LOW',
+    ax: row.ax,
+    ay: row.ay,
+    az: row.az,
+    gx: row.gx,
+    gy: row.gy,
+    gz: row.gz,
+    impactMagnitude: row.impact_magnitude,
+    lat: row.lat,
+    lng: row.lng,
+    speed: row.speed,
+    satellites: row.satellites,
+    timestamp: row.timestamp,
+    deviceId: row.device_id,
+    storage: row.storage,
+  };
+}
+
 function rowToSensorSample(row) {
   return {
     label: new Date(Number(row.timestamp || 0) * 1000).toLocaleTimeString([], {
@@ -130,6 +174,17 @@ function normalizeEvents(rows) {
 
   return rows
     .map(normalizeEvent)
+    .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
+}
+
+function normalizePotholes(rows) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows
+    .map(normalizePothole)
+    .filter((pothole) => Number.isFinite(Number(pothole.lat)) && Number.isFinite(Number(pothole.lng)))
     .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
 }
 
@@ -175,6 +230,7 @@ function appendSensorSample(setSensorSamples, liveData) {
 export function useRealtimeData() {
   const [live, setLive] = useState(initialMockLive);
   const [events, setEvents] = useState(mockEvents);
+  const [potholes, setPotholes] = useState(mockPotholes);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState(null);
   const [sensorSamples, setSensorSamples] = useState([toSensorSample(initialMockLive)]);
@@ -253,6 +309,25 @@ export function useRealtimeData() {
       setEvents(normalizeEvents(data));
     }
 
+    async function loadPotholes() {
+      const { data, error: potholesError } = await supabase
+        .from('pothole_events')
+        .select('*')
+        .eq('device_id', defaultDeviceId)
+        .order('timestamp', { ascending: false });
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (potholesError) {
+        setError(potholesError.message);
+        return;
+      }
+
+      setPotholes(normalizePotholes(data));
+    }
+
     async function loadSensorHistory() {
       const { data, error: historyError } = await supabase
         .from('telemetry_history')
@@ -279,7 +354,7 @@ export function useRealtimeData() {
     async function loadInitialData() {
       setLoading(true);
       setError(null);
-      await Promise.all([loadLive(), loadEvents(), loadSensorHistory()]);
+      await Promise.all([loadLive(), loadEvents(), loadPotholes(), loadSensorHistory()]);
 
       if (isMounted) {
         setLoading(false);
@@ -322,6 +397,18 @@ export function useRealtimeData() {
       .on(
         'postgres_changes',
         {
+          event: '*',
+          schema: 'public',
+          table: 'pothole_events',
+          filter: `device_id=eq.${defaultDeviceId}`,
+        },
+        () => {
+          loadPotholes();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'INSERT',
           schema: 'public',
           table: 'telemetry_history',
@@ -354,5 +441,5 @@ export function useRealtimeData() {
     };
   }, [usingMockData]);
 
-  return { live, events, sensorSamples, loading, error, usingMockData };
+  return { live, events, potholes, sensorSamples, loading, error, usingMockData };
 }
